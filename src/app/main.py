@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from app.api import restaurants
 from app.api import ping
-from app.db import engine, database, metadata, create_tables
+from app.db import engine, database, metadata
 
 metadata.create_all(engine)
 
@@ -11,7 +11,6 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def startup():
-    await create_tables()
     await database.connect()
 
 

@@ -1,42 +1,35 @@
 from app.api.models import RestaurantSchema
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db import Restaurants
+from app.db import restaurants, database
 
 
-async def create_restaurant(db: AsyncSession, title: str, description: str):
-    new_restaurant = Restaurants(title=title, description=description)
-    db.add(new_restaurant)
-    await db.commit()
-    await db.refresh(new_restaurant)
-    return new_restaurant
+async def post(payload: RestaurantSchema):
+    query = restaurants.insert().values(title=payload.title, description=payload.description)
+    return await database.execute(query=query)
 
 
-async def get_restaurant(db: AsyncSession, restaurant_id: int):
-    result = await db.execute(select(Restaurants).where(Restaurants.id == restaurant_id))
-    return result.scalars().first()
+async def get(id: int):
+    query = restaurants.select().where(id == restaurants.c.id)
+    return await database.fetch_one(query=query)
 
 
-async def get_all_restaurants(db: AsyncSession):
-    result = await db.execute(select(Restaurants))
-    return result.scalars().all()
+async def get_all():
+    query = restaurants.select()
+    return await database.fetch_all(query=query)
 
 
-async def update_restaurant(db: AsyncSession, restaurant_id: int, title: str, description: str):
-    result = await db.execute(select(Restaurants).where(Restaurants.id == restaurant_id))
-    restaurant = result.scalars().first()
-    if restaurant:
-        restaurant.title = title
-        restaurant.description = description
-        await db.commit()
-        await db.refresh(restaurant)
-    return restaurant
+async def put(id: int, payload: RestaurantSchema):
+    query = (
+        restaurants
+        .update()
+        .where(id == restaurants.c.id)
+        .values(title=payload.title, description=payload.description)
+        .returning(restaurants.c.id)
+    )
+    return await database.execute(query=query)
 
 
-async def delete_restaurant(db: AsyncSession, restaurant_id: int):
-    result = await db.execute(select(Restaurants).where(Restaurants.id == restaurant_id))
-    restaurant = result.scalars().first()
-    if restaurant:
-        await db.delete(restaurant)
-        await db.commit()
-    return restaurant
+async def delete(id: int):
+    query = restaurants.delete().where(id == restaurants.c.id)
+    return await database.execute(query=query)
