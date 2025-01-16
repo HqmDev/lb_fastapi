@@ -1,7 +1,6 @@
-from app.api.models import RestaurantSchema
-from sqlalchemy.future import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.db import restaurants, database
+from app.api.models import RestaurantSchema, UserCreate
+from app.db import restaurants, database, users
+from passlib.context import CryptContext
 
 
 async def post(payload: RestaurantSchema):
@@ -33,3 +32,28 @@ async def put(id: int, payload: RestaurantSchema):
 async def delete(id: int):
     query = restaurants.delete().where(id == restaurants.c.id)
     return await database.execute(query=query)
+
+
+# Password hashing context
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+async def create_user(payload: UserCreate):
+    hashed_password = pwd_context.hash(payload.password)
+    query = users.insert().values(
+        username=payload.username,
+        email=payload.email,
+        hashed_password=hashed_password,
+    )
+    user_id = await database.execute(query)
+    return {**payload.dict(), "id": user_id, "is_active": True}
+
+
+async def get_user_by_id(user_id: int):
+    query = users.select().where(users.c.id == user_id)
+    return await database.fetch_one(query)
+
+
+async def get_user_by_email(email: str):
+    query = users.select().where(users.c.email == email)
+    return await database.fetch_one(query)

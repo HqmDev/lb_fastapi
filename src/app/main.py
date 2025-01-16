@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 
-from app.api import restaurants
-from app.api import ping
+from app.api import restaurants, users, ping
 from app.db import engine, database, metadata
 
 metadata.create_all(engine)
@@ -21,3 +20,4 @@ async def shutdown():
 
 app.include_router(ping.router)
 app.include_router(restaurants.router, prefix="/restaurants", tags=["restaurants"])
+app.include_router(users.router, prefix="/users", tags=["users"])
